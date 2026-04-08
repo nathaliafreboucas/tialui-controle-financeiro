@@ -1,0 +1,180 @@
+'use client'
+
+import { useState } from 'react'
+import { FiX, FiLoader } from 'react-icons/fi'
+import type { Category, NewTransaction } from '@/types'
+import CurrencyField from './CurrencyField'
+
+interface Props {
+  isOpen: boolean
+  onClose: () => void
+  onSave: (data: NewTransaction) => Promise<void>
+  userId: string
+  categories: Category[]
+}
+
+const today = () => new Date().toISOString().split('T')[0]
+
+export default function AddTransactionModal({ isOpen, onClose, onSave, userId, categories }: Props) {
+  const [description, setDescription] = useState('')
+  const [amount, setAmount] = useState(0)
+  const [date, setDate] = useState(today)
+  const [type, setType] = useState<'fixed' | 'variable' | 'extra'>('variable')
+  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? '')
+  const [isThirdParty, setIsThirdParty] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  if (!isOpen) return null
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await onSave({ userId, description, amount, date, type, categoryId: type === 'extra' ? '' : categoryId, isThirdParty: type !== 'extra' && isThirdParty })
+      onClose()
+      setDescription('')
+      setAmount(0)
+      setDate(today)
+      setType('variable')
+      setCategoryId(categories[0]?.id ?? '')
+      setIsThirdParty(false)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div
+        className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      <div className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-6 flex flex-col gap-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            {type === 'extra' ? 'Adicionar Renda Extra' : 'Adicionar Gasto'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            aria-label="Fechar"
+          >
+            <FiX className="text-xl" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="description" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Descrição
+            </label>
+            <input
+              id="description"
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+              className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition"
+            />
+          </div>
+
+          <CurrencyField
+            id="amount"
+            label="Valor"
+            valueCents={amount}
+            onChange={setAmount}
+          />
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="date" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Data
+            </label>
+            <input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="type" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Tipo
+            </label>
+            <select
+              id="type"
+              value={type}
+              onChange={(e) => setType(e.target.value as 'fixed' | 'variable')}
+              className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition"
+            >
+              <option value="variable">Variável</option>
+              <option value="fixed">Fixo</option>
+              <option value="extra">Renda Extra</option>
+            </select>
+          </div>
+
+          {type !== 'extra' && (
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="category" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Categoria
+              </label>
+              <select
+                id="category"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition"
+              >
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {type !== 'extra' && (
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isThirdParty}
+                onChange={(e) => setIsThirdParty(e.target.checked)}
+                className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 accent-zinc-900 dark:accent-zinc-50"
+              />
+              <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                Gasto de terceiros
+              </span>
+            </label>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              aria-label={saving ? 'Salvando' : 'Adicionar'}
+              className="flex-1 py-2.5 rounded-lg bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-colors"
+            >
+              {saving ? (
+                <>
+                  <FiLoader className="animate-spin" />
+                  Salvando
+                </>
+              ) : (
+                'Adicionar'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
