@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
 import { useFinance } from '@/context/FinanceContext'
 import { getCategoryStatus } from '@/lib/finance'
@@ -17,6 +18,7 @@ import CategoryModal from '@/components/CategoryModal'
 import InvoiceBuilder from '@/components/InvoiceBuilder'
 import { FiChevronLeft, FiChevronRight, FiLoader, FiLogOut, FiPlus, FiSettings } from 'react-icons/fi'
 import { IoReceiptOutline, IoCloseOutline } from 'react-icons/io5'
+import logo from '../../public/icon-512x512.png' 
 
 export default function Home() {
   const { user, loading: authLoading, signOut } = useAuth()
@@ -82,10 +84,16 @@ export default function Home() {
         </header>
         <main className="flex flex-1 items-center justify-center px-6 py-12">
           <div className="w-full max-w-sm flex flex-col gap-8">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                Tialui
-              </h1>
+            <div className="flex flex-col justify-center text-center">
+              <div className='w-full flex justify-center items-center gap-3'>
+                <Image 
+                  src={logo} alt={''}   
+                  width={60}             
+                  />
+                <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                  Tialui
+                </h1>
+              </div>
               <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
                 Seu saldo real, sempre à vista.
               </p>
@@ -110,9 +118,15 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <header className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-          <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-            Tialui
-          </h1>
+          <div className='flex items-center gap-3'>
+            <Image
+              src={logo} alt={''}
+              width={40}
+            />
+            <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+              Tialui
+            </h1>
+          </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <button
