@@ -15,9 +15,10 @@ import AddTransactionModal from '@/components/AddTransactionModal'
 import AddExtraIncomeForm from '@/components/AddExtraIncomeForm'
 import FirebaseErrorBanner from '@/components/FirebaseErrorBanner'
 import TransactionList from '@/components/TransactionList'
+import TransactionFilters, { EMPTY_FILTERS, type FilterState } from '@/components/TransactionFilters'
 import CategoryModal from '@/components/CategoryModal'
 import InvoiceBuilder from '@/components/InvoiceBuilder'
-import { FiChevronLeft, FiChevronRight, FiLoader, FiLogOut, FiPlus, FiSettings, FiTrendingUp } from 'react-icons/fi'
+import { FiChevronLeft, FiChevronRight, FiList, FiLoader, FiLogOut, FiPlus, FiSettings, FiTrendingUp } from 'react-icons/fi'
 import { IoReceiptOutline, IoCloseOutline } from 'react-icons/io5'
 import logo from '../../public/icon-512x512.png' 
 
@@ -25,6 +26,7 @@ export default function Home() {
   const { user, loading: authLoading, signOut } = useAuth()
   const {
     transactions,
+    activeFixedExpenses,
     categories,
     settings,
     totalFixed,
@@ -52,8 +54,17 @@ export default function Home() {
   const [selectionMode, setSelectionMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [invoiceBuilderOpen, setInvoiceBuilderOpen] = useState(false)
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
 
   const thirdPartyTransactions = transactions.filter((t) => t.isThirdParty)
+
+  const filteredTransactions = transactions.filter((t) => {
+    if (filters.categoryId && t.categoryId !== filters.categoryId) return false
+    if (filters.paymentMethod && t.paymentMethod !== filters.paymentMethod) return false
+    if (filters.type && t.type !== filters.type) return false
+    if (filters.thirdPartyOnly && !t.isThirdParty) return false
+    return true
+  })
 
   function toggleSelectTransaction(id: string) {
     setSelectedIds((prev) => {
@@ -252,6 +263,60 @@ export default function Home() {
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Gastos Fixos Recorrentes
+            </h2>
+            <div className="flex items-center gap-3">
+              {activeFixedExpenses.length > 0 && (
+                <a
+                  href="/fixed-expenses"
+                  className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
+                >
+                  <FiList className="text-sm" />
+                  Gerenciar
+                </a>
+              )}
+              <a
+                href="/fixed-expenses"
+                className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
+              >
+                <FiPlus className="text-sm" />
+                Adicionar
+              </a>
+            </div>
+          </div>
+          {activeFixedExpenses.length > 0 ? (
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
+              {activeFixedExpenses.map((fe) => (
+                <div key={fe.id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100 truncate">
+                      {fe.description}
+                    </p>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                      {categories.find((c) => c.id === fe.categoryId)?.name ?? '—'}
+                      {' · '}
+                      <span className="text-blue-500">fixo recorrente</span>
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 shrink-0">
+                    {(fe.amount / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 p-6 text-center text-sm text-zinc-400">
+              Nenhum gasto fixo recorrente.{' '}
+              <a href="/fixed-expenses" className="underline hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors">
+                Adicionar
+              </a>
+            </div>
+          )}
+        </section>
+
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
               Transações
             </h2>
             {thirdPartyTransactions.length > 0 && (
@@ -287,8 +352,13 @@ export default function Home() {
               )
             )}
           </div>
+          <TransactionFilters
+            filters={filters}
+            onChange={setFilters}
+            categories={categories}
+          />
           <TransactionList
-            transactions={transactions}
+            transactions={filteredTransactions}
             categories={categories}
             onDelete={deleteTransaction}
             selectionMode={selectionMode}

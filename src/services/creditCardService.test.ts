@@ -22,6 +22,7 @@ const BASE_INPUT = {
   installments: 3,
   purchaseDate: '2026-11-15',
   categoryId: 'cat-1',
+  type: 'fixed' as const,
 }
 
 beforeEach(() => {

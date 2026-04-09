@@ -12,7 +12,7 @@ const geistSans = Geist({
 })
 
 export const metadata: Metadata = {
-  title: 'Tialui — Controle Financeiro',
+  title: 'Tialúi — Controle Financeiro',
   description: 'Organize suas finanças e acompanhe seu saldo real disponível.',
 }
 

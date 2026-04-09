@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Tialui — Controle Financeiro',
-    short_name: 'Tialui',
+    name: 'Tialúi — Controle Financeiro',
+    short_name: 'Tialúi',
     description: 'Seu saldo real, sempre à vista.',
     start_url: '/',
     display: 'standalone',

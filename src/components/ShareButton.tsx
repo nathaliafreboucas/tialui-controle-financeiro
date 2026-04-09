@@ -16,8 +16,8 @@ export default function ShareButton({ invoiceId }: Props) {
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
-          title: 'Cobrança Tialui',
-          text: 'Confira os gastos que preciso te repassar.',
+          title: 'Cobrança Tialúi',
+          text: 'Ei, Tialúi, me paga!',
           url: link,
         })
         return

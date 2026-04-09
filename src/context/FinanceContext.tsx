@@ -5,8 +5,19 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useCategories } from '@/hooks/useCategories'
 import { useSettings } from '@/hooks/useSettings'
-import type { Transaction, Category, UserSettings, NewTransaction, NewCategory, CreditCardPurchaseInput } from '@/types'
+import { useFixedExpenses } from '@/hooks/useFixedExpenses'
+import { isActiveInCycle, toCycleKey } from '@/services/fixedExpenseService'
 import { addCreditCardInstallments } from '@/services/creditCardService'
+import type {
+  Transaction,
+  Category,
+  UserSettings,
+  NewTransaction,
+  NewCategory,
+  CreditCardPurchaseInput,
+  FixedExpense,
+  NewFixedExpense,
+} from '@/types'
 
 // ---------------------------------------------------------------------------
 // Cycle date helpers
@@ -16,32 +27,19 @@ function toISO(date: Date): string {
   return date.toISOString().split('T')[0]
 }
 
-/**
- * Returns the ISO start/end dates for a billing cycle.
- *
- * If billingCycleDay = 10 and cycleMonth = { year: 2026, month: 4 }:
- *   start = 2026-04-10, end = 2026-05-09
- *
- * billingCycleDay = 1 gives calendar-month behaviour.
- */
 function getCycleDates(year: number, month: number, billingCycleDay: number) {
   const day = Math.max(1, Math.min(28, billingCycleDay))
   const start = new Date(year, month - 1, day)
-  const end = new Date(year, month, day - 1) // next month, day before
+  const end = new Date(year, month, day - 1)
   return { startDate: toISO(start), endDate: toISO(end) }
 }
 
-/**
- * Returns the { year, month } of the cycle that is currently active,
- * based on today's date and the billing cycle day.
- */
 function activeCycleMonth(billingCycleDay: number): { year: number; month: number } {
   const today = new Date()
   const day = Math.max(1, Math.min(28, billingCycleDay))
   if (today.getDate() >= day) {
     return { year: today.getFullYear(), month: today.getMonth() + 1 }
   }
-  // Cycle started in the previous calendar month
   const prev = new Date(today.getFullYear(), today.getMonth() - 1, 1)
   return { year: prev.getFullYear(), month: prev.getMonth() + 1 }
 }
@@ -56,8 +54,7 @@ function formatCycleLabel(startDate: string, endDate: string): string {
     const [y, m, d] = iso.split('-').map(Number)
     return new Date(y, m - 1, d).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })
   }
-  const endYear = endDate.slice(0, 4)
-  const year = endYear
+  const year = endDate.slice(0, 4)
   return `${fmt(startDate)} – ${fmt(endDate)} ${year}`
 }
 
@@ -67,6 +64,8 @@ function formatCycleLabel(startDate: string, endDate: string): string {
 
 interface FinanceContextType {
   transactions: Transaction[]
+  fixedExpenses: FixedExpense[]
+  activeFixedExpenses: FixedExpense[] // active in current cycle
   categories: Category[]
   settings: UserSettings | null
   totalFixed: number
@@ -75,18 +74,22 @@ interface FinanceContextType {
   categorySpend: Record<string, number>
   loading: boolean
   error: string | null
-  // Cycle navigation
   cycleLabel: string
   isCurrentCycle: boolean
   prevCycle: () => void
   nextCycle: () => void
-  // Actions
   addTransaction: (data: NewTransaction) => Promise<void>
   deleteTransaction: (id: string) => Promise<void>
   addCreditCardPurchase: (data: CreditCardPurchaseInput) => Promise<void>
   addCategory: (data: NewCategory) => Promise<void>
   updateCategory: (id: string, patch: Partial<Pick<Category, 'name' | 'limit'>>) => Promise<void>
   saveSettings: (data: UserSettings) => Promise<void>
+  addFixedExpense: (data: NewFixedExpense) => Promise<void>
+  deactivateFixedExpense: (id: string, lastActiveCycle: string) => Promise<void>
+  updateFixedExpense: (
+    id: string,
+    patch: Partial<Pick<FixedExpense, 'description' | 'amount' | 'categoryId'>>
+  ) => Promise<void>
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null)
@@ -103,12 +106,10 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const billingCycleDay = settings?.billingCycleDay ?? 1
 
-  // Cycle navigation state — initialised to the active cycle for the current day.
   const [cycleMonth, setCycleMonth] = useState<{ year: number; month: number }>(
     () => activeCycleMonth(1)
   )
 
-  // Once settings load, jump to the real active cycle if it differs.
   useEffect(() => {
     if (!settings) return
     const active = activeCycleMonth(settings.billingCycleDay)
@@ -126,12 +127,30 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const { categories, loading: catLoading, error: catError, add: addCat, update: updateCat } =
     useCategories(userId)
 
+  const {
+    fixedExpenses,
+    loading: feLoading,
+    error: feError,
+    add: addFE,
+    deactivate: deactivateFE,
+    update: updateFE,
+  } = useFixedExpenses(userId)
+
+  // Fixed expenses active in the current cycle
+  const activeFixedExpenses = useMemo(() => {
+    const cycleKey = toCycleKey(cycleMonth.year, cycleMonth.month)
+    return fixedExpenses.filter((fe) => isActiveInCycle(fe, cycleKey))
+  }, [fixedExpenses, cycleMonth])
+
   // ---- Aggregates ----------------------------------------------------------
 
-  const totalFixed = useMemo(
-    () => transactions.filter((t) => t.type === 'fixed').reduce((sum, t) => sum + t.amount, 0),
-    [transactions]
-  )
+  const totalFixed = useMemo(() => {
+    const fromTransactions = transactions
+      .filter((t) => t.type === 'fixed')
+      .reduce((sum, t) => sum + t.amount, 0)
+    const fromFixedExpenses = activeFixedExpenses.reduce((sum, fe) => sum + fe.amount, 0)
+    return fromTransactions + fromFixedExpenses
+  }, [transactions, activeFixedExpenses])
 
   const totalVariable = useMemo(
     () => transactions.filter((t) => t.type === 'variable').reduce((sum, t) => sum + t.amount, 0),
@@ -175,14 +194,16 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     <FinanceContext.Provider
       value={{
         transactions,
+        fixedExpenses,
+        activeFixedExpenses,
         categories,
         settings,
         totalFixed,
         totalVariable,
         totalExtras,
         categorySpend,
-        loading: txLoading || catLoading || settingsLoading,
-        error: txError ?? catError ?? settingsError ?? null,
+        loading: txLoading || catLoading || settingsLoading || feLoading,
+        error: txError ?? catError ?? settingsError ?? feError ?? null,
         cycleLabel,
         isCurrentCycle,
         prevCycle,
@@ -193,6 +214,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         addCategory: addCat,
         updateCategory: updateCat,
         saveSettings: saveSets,
+        addFixedExpense: addFE,
+        deactivateFixedExpense: deactivateFE,
+        updateFixedExpense: updateFE,
       }}
     >
       {children}

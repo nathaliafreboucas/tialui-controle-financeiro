@@ -14,7 +14,10 @@ interface Props {
   categories: Category[]
 }
 
-const today = () => new Date().toISOString().split('T')[0]
+function today() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 export default function AddTransactionModal({
   isOpen,
@@ -27,12 +30,28 @@ export default function AddTransactionModal({
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState(0)
   const [date, setDate] = useState(today)
-  const [type, setType] = useState<'fixed' | 'variable'>('variable')
+  const type = 'variable'
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? '')
   const [isThirdParty, setIsThirdParty] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<'debit' | 'credit_card'>('debit')
-  const [installments, setInstallments] = useState(2)
+  const [installments, setInstallments] = useState('')
   const [saving, setSaving] = useState(false)
+  const [amountError, setAmountError] = useState(false)
+
+  function resetForm() {
+    setDescription('')
+    setAmount(0)
+    setDate(today)
+    setCategoryId(categories[0]?.id ?? '')
+    setIsThirdParty(false)
+    setPaymentMethod('debit')
+    setInstallments('')
+  }
+
+  function handleClose() {
+    resetForm()
+    onClose()
+  }
 
   if (!isOpen) return null
 
@@ -43,6 +62,11 @@ export default function AddTransactionModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (amount === 0) {
+      setAmountError(true)
+      return
+    }
+    setAmountError(false)
     setSaving(true)
     try {
       if (paymentMethod === 'credit_card') {
@@ -50,9 +74,10 @@ export default function AddTransactionModal({
           userId,
           description,
           totalAmount: amount,
-          installments,
+          installments: parseInt(installments) || 1,
           purchaseDate: date,
           categoryId,
+          type,
         })
       } else {
         const txData: NewTransaction = {
@@ -66,15 +91,7 @@ export default function AddTransactionModal({
         if (isThirdParty) txData.isThirdParty = true
         await onSave(txData)
       }
-      onClose()
-      setDescription('')
-      setAmount(0)
-      setDate(today)
-      setType('variable')
-      setCategoryId(categories[0]?.id ?? '')
-      setIsThirdParty(false)
-      setPaymentMethod('debit')
-      setInstallments(2)
+      handleClose()
     } finally {
       setSaving(false)
     }
@@ -84,7 +101,7 @@ export default function AddTransactionModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div
         className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       <div className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-6 flex flex-col gap-5">
@@ -93,7 +110,7 @@ export default function AddTransactionModal({
             {getTitle()}
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
             aria-label="Fechar"
           >
@@ -120,8 +137,11 @@ export default function AddTransactionModal({
             id="amount"
             label={paymentMethod === 'credit_card' ? 'Valor Total' : 'Valor'}
             valueCents={amount}
-            onChange={setAmount}
+            onChange={(v) => { setAmount(v); if (v > 0) setAmountError(false) }}
           />
+          {amountError && (
+            <p className="text-xs text-red-500 -mt-2">Informe um valor maior que zero.</p>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor="date" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -132,23 +152,9 @@ export default function AddTransactionModal({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              required
               className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition"
             />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="type" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Tipo
-            </label>
-            <select
-              id="type"
-              value={type}
-              onChange={(e) => setType(e.target.value as 'fixed' | 'variable')}
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition"
-            >
-              <option value="variable">Variável</option>
-              <option value="fixed">Fixo</option>
-            </select>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -173,19 +179,21 @@ export default function AddTransactionModal({
               </label>
               <input
                 id="installments"
-                type="number"
-                min={1}
-                max={48}
+                type="text"
+                inputMode="numeric"
                 value={installments}
-                onChange={(e) => setInstallments(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => setInstallments(e.target.value.replace(/\D/g, ''))}
+                placeholder="Ex: 12"
                 className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition"
               />
-              {amount > 0 && (
+              {amount > 0 && installments !== '' && (
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {installments}x de {(amount / installments / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  {parseInt(installments) || 1}x de {(amount / (parseInt(installments) || 1) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   {' '}· 1ª parcela em{' '}
-                  {new Date(new Date(date).setMonth(new Date(date).getMonth() + 1))
-                    .toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                  {(() => {
+                    const [y, m] = date.split('-').map(Number)
+                    return new Date(y, m, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                  })()}
                 </p>
               )}
             </div>
@@ -226,7 +234,7 @@ export default function AddTransactionModal({
           <div className="flex gap-3 pt-1">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="flex-1 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
             >
               Cancelar

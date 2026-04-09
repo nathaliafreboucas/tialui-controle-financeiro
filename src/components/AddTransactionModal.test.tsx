@@ -126,6 +126,7 @@ describe('AddTransactionModal', () => {
       />
     )
     await userEvent.type(screen.getByLabelText(/descrição/i), 'Teste')
+    await userEvent.type(screen.getByLabelText(/valor/i), '5000')
     await userEvent.click(screen.getByRole('button', { name: /adicionar/i }))
     expect(screen.getByRole('button', { name: /salvando/i })).toBeDisabled()
   })
@@ -185,8 +186,8 @@ describe('AddTransactionModal', () => {
     )
 
     await userEvent.type(screen.getByLabelText(/descrição/i), 'TV Samsung')
-    await userEvent.type(screen.getByLabelText(/valor total/i), '120000')
     await userEvent.selectOptions(screen.getByLabelText(/forma de pagamento/i), 'credit_card')
+    await userEvent.type(screen.getByLabelText(/valor total/i), '120000')
     await userEvent.click(screen.getByRole('button', { name: /adicionar/i }))
 
     await waitFor(() => {

@@ -55,7 +55,25 @@ export interface CreditCardPurchaseInput {
   installments: number
   purchaseDate: string // ISO: 'YYYY-MM-DD'
   categoryId: string
+  type: 'fixed' | 'variable'
 }
+
+/**
+ * Recurring fixed expense definition. Applies to every billing cycle between
+ * activeFrom and activeUntil (both inclusive, format: 'YYYY-MM').
+ * When activeUntil is absent the expense is still active.
+ */
+export interface FixedExpense {
+  id: string
+  userId: string
+  description: string
+  amount: number // in cents
+  categoryId: string
+  activeFrom: string // 'YYYY-MM'
+  activeUntil?: string // 'YYYY-MM'
+}
+
+export type NewFixedExpense = Omit<FixedExpense, 'id'>
 
 export interface ExtraIncomeInput {
   userId: string

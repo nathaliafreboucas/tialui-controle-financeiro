@@ -24,6 +24,13 @@ export default function AddExtraIncomeForm({ isOpen, onClose, onSave }: Props) {
   const [date, setDate] = useState(today)
   const [saving, setSaving] = useState(false)
 
+  function handleClose() {
+    setDescription('')
+    setAmount(0)
+    setDate(today)
+    onClose()
+  }
+
   if (!isOpen) return null
 
   async function handleSubmit(e: React.FormEvent) {
@@ -31,10 +38,7 @@ export default function AddExtraIncomeForm({ isOpen, onClose, onSave }: Props) {
     setSaving(true)
     try {
       await onSave({ description, amount, date })
-      onClose()
-      setDescription('')
-      setAmount(0)
-      setDate(today)
+      handleClose()
     } finally {
       setSaving(false)
     }
@@ -44,7 +48,7 @@ export default function AddExtraIncomeForm({ isOpen, onClose, onSave }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div
         className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       <div className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-6 flex flex-col gap-5">
@@ -53,7 +57,7 @@ export default function AddExtraIncomeForm({ isOpen, onClose, onSave }: Props) {
             Adicionar Renda Extra
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
             aria-label="Fechar"
           >
@@ -100,7 +104,7 @@ export default function AddExtraIncomeForm({ isOpen, onClose, onSave }: Props) {
           <div className="flex gap-3 pt-1">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="flex-1 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
             >
               Cancelar

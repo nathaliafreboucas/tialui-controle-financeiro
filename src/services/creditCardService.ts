@@ -34,7 +34,7 @@ export async function addCreditCardInstallments(
       description: `${data.description} (${i}/${data.installments})`,
       amount: installmentAmount,
       date: dueDate,
-      type: 'fixed',
+      type: data.type,
       categoryId: data.categoryId,
       paymentMethod: 'credit_card',
       installmentData: {
