@@ -5,7 +5,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useCategories } from '@/hooks/useCategories'
 import { useSettings } from '@/hooks/useSettings'
-import type { Transaction, Category, UserSettings, NewTransaction, NewCategory } from '@/types'
+import type { Transaction, Category, UserSettings, NewTransaction, NewCategory, CreditCardPurchaseInput } from '@/types'
+import { addCreditCardInstallments } from '@/services/creditCardService'
 
 // ---------------------------------------------------------------------------
 // Cycle date helpers
@@ -82,6 +83,7 @@ interface FinanceContextType {
   // Actions
   addTransaction: (data: NewTransaction) => Promise<void>
   deleteTransaction: (id: string) => Promise<void>
+  addCreditCardPurchase: (data: CreditCardPurchaseInput) => Promise<void>
   addCategory: (data: NewCategory) => Promise<void>
   updateCategory: (id: string, patch: Partial<Pick<Category, 'name' | 'limit'>>) => Promise<void>
   saveSettings: (data: UserSettings) => Promise<void>
@@ -187,6 +189,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         nextCycle,
         addTransaction: addTx,
         deleteTransaction: removeTx,
+        addCreditCardPurchase: (data) => addCreditCardInstallments(data).then(() => {}),
         addCategory: addCat,
         updateCategory: updateCat,
         saveSettings: saveSets,

@@ -2,35 +2,70 @@
 
 import { useState } from 'react'
 import { FiX, FiLoader } from 'react-icons/fi'
-import type { Category, NewTransaction } from '@/types'
+import type { Category, NewTransaction, CreditCardPurchaseInput } from '@/types'
 import CurrencyField from './CurrencyField'
 
 interface Props {
   isOpen: boolean
   onClose: () => void
   onSave: (data: NewTransaction) => Promise<void>
+  onSaveCreditCard?: (data: CreditCardPurchaseInput) => Promise<void>
   userId: string
   categories: Category[]
 }
 
 const today = () => new Date().toISOString().split('T')[0]
 
-export default function AddTransactionModal({ isOpen, onClose, onSave, userId, categories }: Props) {
+export default function AddTransactionModal({
+  isOpen,
+  onClose,
+  onSave,
+  onSaveCreditCard = async () => {},
+  userId,
+  categories,
+}: Props) {
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState(0)
   const [date, setDate] = useState(today)
-  const [type, setType] = useState<'fixed' | 'variable' | 'extra'>('variable')
+  const [type, setType] = useState<'fixed' | 'variable'>('variable')
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? '')
   const [isThirdParty, setIsThirdParty] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<'debit' | 'credit_card'>('debit')
+  const [installments, setInstallments] = useState(2)
   const [saving, setSaving] = useState(false)
 
   if (!isOpen) return null
+
+  function getTitle() {
+    if (paymentMethod === 'credit_card') return 'Adicionar Compra no Cartão'
+    return 'Adicionar Gasto'
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
     try {
-      await onSave({ userId, description, amount, date, type, categoryId: type === 'extra' ? '' : categoryId, isThirdParty: type !== 'extra' && isThirdParty })
+      if (paymentMethod === 'credit_card') {
+        await onSaveCreditCard({
+          userId,
+          description,
+          totalAmount: amount,
+          installments,
+          purchaseDate: date,
+          categoryId,
+        })
+      } else {
+        const txData: NewTransaction = {
+          userId,
+          description,
+          amount,
+          date,
+          type,
+          categoryId,
+        }
+        if (isThirdParty) txData.isThirdParty = true
+        await onSave(txData)
+      }
       onClose()
       setDescription('')
       setAmount(0)
@@ -38,6 +73,8 @@ export default function AddTransactionModal({ isOpen, onClose, onSave, userId, c
       setType('variable')
       setCategoryId(categories[0]?.id ?? '')
       setIsThirdParty(false)
+      setPaymentMethod('debit')
+      setInstallments(2)
     } finally {
       setSaving(false)
     }
@@ -53,7 +90,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSave, userId, c
       <div className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-6 flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-            {type === 'extra' ? 'Adicionar Renda Extra' : 'Adicionar Gasto'}
+            {getTitle()}
           </h2>
           <button
             onClick={onClose}
@@ -81,7 +118,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSave, userId, c
 
           <CurrencyField
             id="amount"
-            label="Valor"
+            label={paymentMethod === 'credit_card' ? 'Valor Total' : 'Valor'}
             valueCents={amount}
             onChange={setAmount}
           />
@@ -111,31 +148,68 @@ export default function AddTransactionModal({ isOpen, onClose, onSave, userId, c
             >
               <option value="variable">Variável</option>
               <option value="fixed">Fixo</option>
-              <option value="extra">Renda Extra</option>
             </select>
           </div>
 
-          {type !== 'extra' && (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="paymentMethod" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Forma de Pagamento
+            </label>
+            <select
+              id="paymentMethod"
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value as 'debit' | 'credit_card')}
+              className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition"
+            >
+              <option value="debit">Dinheiro / Débito</option>
+              <option value="credit_card">Cartão de Crédito</option>
+            </select>
+          </div>
+
+          {paymentMethod === 'credit_card' && (
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="category" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Categoria
+              <label htmlFor="installments" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Parcelas
               </label>
-              <select
-                id="category"
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+              <input
+                id="installments"
+                type="number"
+                min={1}
+                max={48}
+                value={installments}
+                onChange={(e) => setInstallments(Math.max(1, parseInt(e.target.value) || 1))}
                 className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition"
-              >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              />
+              {amount > 0 && (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {installments}x de {(amount / installments / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  {' '}· 1ª parcela em{' '}
+                  {new Date(new Date(date).setMonth(new Date(date).getMonth() + 1))
+                    .toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                </p>
+              )}
             </div>
           )}
 
-          {type !== 'extra' && (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="category" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Categoria
+            </label>
+            <select
+              id="category"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition"
+            >
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {paymentMethod !== 'credit_card' && (
             <label className="flex items-center gap-2.5 cursor-pointer select-none">
               <input
                 type="checkbox"

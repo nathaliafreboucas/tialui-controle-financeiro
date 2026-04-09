@@ -5,7 +5,8 @@
       "Bash(npx jest:*)",
       "Bash(ls -la src/lib/*.test.ts src/services/*.test.ts)",
       "Bash(node -e \"const j = require\\('./jest.config.ts'\\); console.log\\(j\\)\")",
-      "Bash(node -e ':*)"
+      "Bash(node -e ':*)",
+      "Bash(firebase deploy:*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\conta\\OneDrive\\Documentos\\Tialui\\tialui\\src\\app\\invoice"

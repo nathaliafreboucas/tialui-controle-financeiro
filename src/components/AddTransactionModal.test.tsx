@@ -143,4 +143,76 @@ describe('AddTransactionModal', () => {
     await userEvent.type(screen.getByLabelText(/valor/i), '10000')
     expect(screen.getByLabelText(/valor/i)).toHaveValue('R$ 100,00')
   })
+
+  it('should show payment method selector for non-extra types', () => {
+    render(
+      <AddTransactionModal
+        isOpen
+        onClose={jest.fn()}
+        onSave={jest.fn()}
+        userId="u1"
+        categories={MOCK_CATEGORIES}
+      />
+    )
+    expect(screen.getByLabelText(/forma de pagamento/i)).toBeInTheDocument()
+  })
+
+  it('should show installments field when credit card is selected', async () => {
+    render(
+      <AddTransactionModal
+        isOpen
+        onClose={jest.fn()}
+        onSave={jest.fn()}
+        userId="u1"
+        categories={MOCK_CATEGORIES}
+      />
+    )
+    await userEvent.selectOptions(screen.getByLabelText(/forma de pagamento/i), 'credit_card')
+    expect(screen.getByLabelText(/parcelas/i)).toBeInTheDocument()
+  })
+
+  it('should call onSaveCreditCard when credit card is selected and form submitted', async () => {
+    const onSaveCreditCard = jest.fn().mockResolvedValue(undefined)
+    render(
+      <AddTransactionModal
+        isOpen
+        onClose={jest.fn()}
+        onSave={jest.fn()}
+        onSaveCreditCard={onSaveCreditCard}
+        userId="u1"
+        categories={MOCK_CATEGORIES}
+      />
+    )
+
+    await userEvent.type(screen.getByLabelText(/descrição/i), 'TV Samsung')
+    await userEvent.type(screen.getByLabelText(/valor total/i), '120000')
+    await userEvent.selectOptions(screen.getByLabelText(/forma de pagamento/i), 'credit_card')
+    await userEvent.click(screen.getByRole('button', { name: /adicionar/i }))
+
+    await waitFor(() => {
+      expect(onSaveCreditCard).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'u1',
+          description: 'TV Samsung',
+          totalAmount: 120000,
+          installments: 2,
+          categoryId: 'c1',
+        })
+      )
+    })
+  })
+
+  it('should hide third-party checkbox when credit card is selected', async () => {
+    render(
+      <AddTransactionModal
+        isOpen
+        onClose={jest.fn()}
+        onSave={jest.fn()}
+        userId="u1"
+        categories={MOCK_CATEGORIES}
+      />
+    )
+    await userEvent.selectOptions(screen.getByLabelText(/forma de pagamento/i), 'credit_card')
+    expect(screen.queryByText(/gasto de terceiros/i)).not.toBeInTheDocument()
+  })
 })

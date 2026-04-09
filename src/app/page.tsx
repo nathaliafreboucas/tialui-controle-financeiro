@@ -12,11 +12,12 @@ import AuthForm from '@/components/AuthForm'
 import ThemeToggle from '@/components/ThemeToggle'
 import SettingsModal from '@/components/SettingsModal'
 import AddTransactionModal from '@/components/AddTransactionModal'
+import AddExtraIncomeForm from '@/components/AddExtraIncomeForm'
 import FirebaseErrorBanner from '@/components/FirebaseErrorBanner'
 import TransactionList from '@/components/TransactionList'
 import CategoryModal from '@/components/CategoryModal'
 import InvoiceBuilder from '@/components/InvoiceBuilder'
-import { FiChevronLeft, FiChevronRight, FiLoader, FiLogOut, FiPlus, FiSettings } from 'react-icons/fi'
+import { FiChevronLeft, FiChevronRight, FiLoader, FiLogOut, FiPlus, FiSettings, FiTrendingUp } from 'react-icons/fi'
 import { IoReceiptOutline, IoCloseOutline } from 'react-icons/io5'
 import logo from '../../public/icon-512x512.png' 
 
@@ -34,17 +35,18 @@ export default function Home() {
     error: financeError,
     addTransaction,
     deleteTransaction,
+    addCreditCardPurchase,
     addCategory,
     updateCategory,
     saveSettings,
     cycleLabel,
-    isCurrentCycle,
     prevCycle,
     nextCycle,
   } = useFinance()
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [addTxOpen, setAddTxOpen] = useState(false)
+  const [addExtraIncomeOpen, setAddExtraIncomeOpen] = useState(false)
   const [categoryModalOpen, setCategoryModalOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<import('@/types').Category | null>(null)
   const [selectionMode, setSelectionMode] = useState(false)
@@ -91,7 +93,7 @@ export default function Home() {
                   width={60}             
                   />
                 <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                  Tialui
+                  Tialúi
                 </h1>
               </div>
               <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
@@ -124,7 +126,7 @@ export default function Home() {
               width={40}
             />
             <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-              Tialui
+              Tialúi
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -179,8 +181,7 @@ export default function Home() {
           </span>
           <button
             onClick={nextCycle}
-            disabled={isCurrentCycle}
-            className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
             aria-label="Próximo ciclo"
           >
             <FiChevronRight className="text-lg" />
@@ -298,6 +299,15 @@ export default function Home() {
 
         <button
           type="button"
+          onClick={() => setAddExtraIncomeOpen(true)}
+          className="fixed bottom-24 right-6 w-12 h-12 rounded-full bg-green-600 dark:bg-green-500 text-white shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+          aria-label="Adicionar renda extra"
+        >
+          <FiTrendingUp className="text-xl" />
+        </button>
+
+        <button
+          type="button"
           onClick={() => setAddTxOpen(true)}
           className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 text-3xl shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
           aria-label="Adicionar gasto"
@@ -319,8 +329,23 @@ export default function Home() {
             isOpen={addTxOpen}
             onClose={() => setAddTxOpen(false)}
             onSave={addTransaction}
+            onSaveCreditCard={addCreditCardPurchase}
             userId={user.uid}
             categories={categories}
+          />
+          <AddExtraIncomeForm
+            isOpen={addExtraIncomeOpen}
+            onClose={() => setAddExtraIncomeOpen(false)}
+            onSave={async ({ description, amount, date }) => {
+              await addTransaction({
+                userId: user.uid,
+                description,
+                amount,
+                date,
+                type: 'extra',
+                categoryId: '',
+              })
+            }}
           />
           <CategoryModal
             isOpen={categoryModalOpen}

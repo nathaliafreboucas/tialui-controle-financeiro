@@ -81,3 +81,11 @@ Novo Schema (Firestore):
 invoices (Coleção):
 
 id, senderId, receiverId, status (pending/paid), totalAmount, transactionIds (array de IDs), shareLink.
+
+Gestão de Cartão de Crédito:
+
+Projeção: Gastos feitos no cartão de crédito neste mês não são descontados do saldo do mês atual. Eles geram uma "fatura" (Invoice) que será paga no mês seguinte (baseado no billingCycleDay configurado).
+
+Parcelamento (Installments): Ao cadastrar um gasto de cartão, o usuário informa o número de parcelas (ex: 3x).
+
+Lógica de Projeção: O sistema deve calcular automaticamente o valor de cada parcela e projetá-lo como um gasto fixo nos meses subsequentes correspondentes, descontando da monthlyIncome desses meses futuros.
