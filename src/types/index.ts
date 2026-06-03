@@ -31,6 +31,8 @@ export interface Transaction {
   isThirdParty?: boolean
   paymentMethod?: 'debit' | 'credit_card'
   installmentData?: InstallmentData
+  /** Data original da compra no cartão (só na 1ª parcela). Usado para rastrear categoria no ciclo de compra, não de fatura. */
+  purchaseDate?: string
 }
 
 export type NewTransaction = Omit<Transaction, 'id'>

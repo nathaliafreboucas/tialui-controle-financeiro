@@ -20,7 +20,10 @@ export async function getCycleTransactions(
 
   return snapshot.docs
     .map((d) => ({ id: d.id, ...(d.data() as Omit<Transaction, 'id'>) }))
-    .filter((t) => t.date >= startDate && t.date <= endDate)
+    .filter((t) =>
+      (t.date >= startDate && t.date <= endDate) ||
+      (t.purchaseDate !== undefined && t.purchaseDate >= startDate && t.purchaseDate <= endDate)
+    )
     .sort((a, b) => b.date.localeCompare(a.date))
 }
 

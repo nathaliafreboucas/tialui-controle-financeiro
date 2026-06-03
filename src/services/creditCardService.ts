@@ -46,6 +46,8 @@ export async function addCreditCardInstallments(
         purchaseDescription: data.description,
         totalAmount: data.totalAmount,
       },
+      // Data de categoria: purchaseDate + i meses (sempre 1 mês antes do vencimento quando fatura fechada)
+      purchaseDate: addMonthsToDate(data.purchaseDate, i),
     })
     transactionIds.push(txId)
   }

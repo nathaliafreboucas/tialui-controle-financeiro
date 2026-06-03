@@ -122,8 +122,14 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     [cycleMonth, billingCycleDay]
   )
 
-  const { transactions, loading: txLoading, error: txError, add: addTx, remove: removeTx } =
+  const { transactions: allCycleTransactions, loading: txLoading, error: txError, add: addTx, remove: removeTx } =
     useTransactions(userId, startDate, endDate)
+
+  // Transações para saldo e lista: só as faturadas no ciclo atual
+  const transactions = useMemo(
+    () => allCycleTransactions.filter((t) => t.date >= startDate && t.date <= endDate),
+    [allCycleTransactions, startDate, endDate]
+  )
 
   const { categories, loading: catLoading, error: catError, add: addCat, update: updateCat } =
     useCategories(userId)
@@ -170,11 +176,15 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const categorySpend = useMemo(
     () =>
-      transactions.reduce<Record<string, number>>((map, t) => {
-        if (t.categoryId) map[t.categoryId] = (map[t.categoryId] ?? 0) + t.amount
+      allCycleTransactions.reduce<Record<string, number>>((map, t) => {
+        // Usa purchaseDate para cartão (ciclo da compra), date para o resto
+        const spendDate = t.purchaseDate ?? t.date
+        if (spendDate >= startDate && spendDate <= endDate && t.categoryId) {
+          map[t.categoryId] = (map[t.categoryId] ?? 0) + t.amount
+        }
         return map
       }, {}),
-    [transactions]
+    [allCycleTransactions, startDate, endDate]
   )
 
   // ---- Cycle navigation ----------------------------------------------------
