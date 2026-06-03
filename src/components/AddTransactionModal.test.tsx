@@ -115,7 +115,7 @@ describe('AddTransactionModal', () => {
   })
 
   it('should show loading state while saving', async () => {
-    const onSave = jest.fn(() => new Promise(() => {})) // nunca resolve
+    const onSave = jest.fn(() => new Promise<void>(() => {})) // nunca resolve
     render(
       <AddTransactionModal
         isOpen

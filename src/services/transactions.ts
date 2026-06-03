@@ -27,3 +27,15 @@ export async function getCycleTransactions(
 export async function deleteTransaction(id: string): Promise<void> {
   await deleteDoc(doc(db, COL, id))
 }
+
+export async function getSavingsTransactions(userId: string): Promise<Transaction[]> {
+  const q = query(
+    collection(db, COL),
+    where('userId', '==', userId),
+    where('type', '==', 'savings')
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs
+    .map((d) => ({ id: d.id, ...(d.data() as Omit<Transaction, 'id'>) }))
+    .sort((a, b) => b.date.localeCompare(a.date))
+}

@@ -26,8 +26,8 @@ export interface Transaction {
   description: string
   amount: number
   date: string // ISO: 'YYYY-MM-DD'
-  type: 'fixed' | 'variable' | 'extra'
-  categoryId: string // vazio ('') quando type === 'extra'
+  type: 'fixed' | 'variable' | 'extra' | 'savings'
+  categoryId: string // vazio ('') quando type === 'extra' ou 'savings'
   isThirdParty?: boolean
   paymentMethod?: 'debit' | 'credit_card'
   installmentData?: InstallmentData
@@ -89,7 +89,7 @@ export interface InvoiceItem {
   description: string
   amount: number
   date: string
-  type: 'fixed' | 'variable' | 'extra'
+  type: 'fixed' | 'variable' | 'extra' | 'savings'
   categoryId: string
 }
 

@@ -71,6 +71,7 @@ interface FinanceContextType {
   totalFixed: number
   totalVariable: number
   totalExtras: number
+  totalSavings: number
   categorySpend: Record<string, number>
   loading: boolean
   error: string | null
@@ -162,6 +163,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     [transactions]
   )
 
+  const totalSavings = useMemo(
+    () => transactions.filter((t) => t.type === 'savings').reduce((sum, t) => sum + t.amount, 0),
+    [transactions]
+  )
+
   const categorySpend = useMemo(
     () =>
       transactions.reduce<Record<string, number>>((map, t) => {
@@ -201,6 +207,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         totalFixed,
         totalVariable,
         totalExtras,
+        totalSavings,
         categorySpend,
         loading: txLoading || catLoading || settingsLoading || feLoading,
         error: txError ?? catError ?? settingsError ?? feError ?? null,

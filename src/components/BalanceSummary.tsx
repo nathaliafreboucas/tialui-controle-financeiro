@@ -41,7 +41,7 @@ export default function BalanceSummary({
       <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4 flex flex-col gap-2 text-sm text-zinc-600 dark:text-zinc-400">
         <Row label="Salário" value={formatCurrency(income)} />
         {extras > 0 && <Row label="Renda Extra" value={formatCurrency(extras)} positive />}
-        <Row label="Cofrinho" value={`- ${formatCurrency(savings)}`} negative />
+        {savings > 0 && <Row label="Cofrinho" value={`${formatCurrency(savings)}`} savings />}
         <Row label="Gastos Fixos" value={`- ${formatCurrency(fixedExpenses)}`} negative />
         <Row label="Gastos Variáveis" value={`- ${formatCurrency(variableExpenses)}`} negative />
       </div>
@@ -54,17 +54,21 @@ function Row({
   value,
   positive,
   negative,
+  savings,
 }: {
   label: string
   value: string
   positive?: boolean
   negative?: boolean
+  savings?: boolean
 }) {
   const color = positive
     ? 'text-green-600'
     : negative
       ? 'text-red-500'
-      : ''
+      : savings
+        ? 'text-blue-500'
+        : ''
 
   return (
     <div className="flex justify-between">

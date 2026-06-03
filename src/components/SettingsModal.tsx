@@ -15,7 +15,6 @@ interface Props {
 
 export default function SettingsModal({ isOpen, onClose, onSave, userId, initialSettings }: Props) {
   const [income, setIncome] = useState(initialSettings?.monthlyIncome ?? 0)
-  const [savings, setSavings] = useState(initialSettings?.savingsGoal ?? 0)
   const [cycleDay, setCycleDay] = useState(initialSettings?.billingCycleDay ?? 1)
   const [saving, setSaving] = useState(false)
 
@@ -25,7 +24,7 @@ export default function SettingsModal({ isOpen, onClose, onSave, userId, initial
     e.preventDefault()
     setSaving(true)
     try {
-      await onSave({ userId, monthlyIncome: income, savingsGoal: savings, billingCycleDay: cycleDay })
+      await onSave({ userId, monthlyIncome: income, savingsGoal: 0, billingCycleDay: cycleDay })
       onClose()
     } finally {
       setSaving(false)
@@ -63,13 +62,6 @@ export default function SettingsModal({ isOpen, onClose, onSave, userId, initial
             valueCents={income}
             onChange={setIncome}
             hint="Sua renda mensal principal"
-          />
-          <CurrencyField
-            id="savings"
-            label="Cofrinho (meta de economia)"
-            valueCents={savings}
-            onChange={setSavings}
-            hint="Valor reservado antes dos gastos"
           />
           <Field
             id="cycleDay"

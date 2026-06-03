@@ -23,6 +23,7 @@ const BASE_INPUT = {
   purchaseDate: '2026-11-15',
   categoryId: 'cat-1',
   type: 'fixed' as const,
+  billClosed: true,
 }
 
 beforeEach(() => {

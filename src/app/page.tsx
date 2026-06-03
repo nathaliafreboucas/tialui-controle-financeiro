@@ -19,6 +19,7 @@ import TransactionFilters, { EMPTY_FILTERS, type FilterState } from '@/component
 import CategoryModal from '@/components/CategoryModal'
 import InvoiceBuilder from '@/components/InvoiceBuilder'
 import { FiChevronLeft, FiChevronRight, FiList, FiLoader, FiLogOut, FiPlus, FiSettings, FiTrendingUp } from 'react-icons/fi'
+import { PiPiggyBank } from 'react-icons/pi'
 import { IoReceiptOutline, IoCloseOutline } from 'react-icons/io5'
 import logo from '../../public/icon-512x512.png' 
 
@@ -32,6 +33,7 @@ export default function Home() {
     totalFixed,
     totalVariable,
     totalExtras,
+    totalSavings,
     categorySpend,
     loading: financeLoading,
     error: financeError,
@@ -119,7 +121,6 @@ export default function Home() {
   }
 
   const income = settings?.monthlyIncome ?? 0
-  const savingsGoal = settings?.savingsGoal ?? 0
 
   const categoriesWithLimit = categories.filter((c) => c.limit && c.limit > 0)
 
@@ -169,7 +170,7 @@ export default function Home() {
 
         {!settings && !financeError && (
           <div className="rounded-xl bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 p-4 text-sm text-yellow-800 dark:text-yellow-300 flex items-center justify-between gap-3">
-            <span>Configure seu salário e cofrinho para calcular o saldo disponível.</span>
+            <span>Configure seu salário para calcular o saldo disponível.</span>
             <button
               onClick={() => setSettingsOpen(true)}
               className="shrink-0 font-medium underline underline-offset-2"
@@ -202,7 +203,7 @@ export default function Home() {
         <BalanceSummary
           income={income}
           extras={totalExtras}
-          savings={savingsGoal}
+          savings={totalSavings}
           fixedExpenses={totalFixed}
           variableExpenses={totalVariable}
         />
@@ -366,6 +367,14 @@ export default function Home() {
             onToggleSelect={toggleSelectTransaction}
           />
         </section>
+
+        <a
+          href="/cofrinho"
+          className="fixed bottom-40 right-6 w-12 h-12 rounded-full bg-blue-600 dark:bg-blue-500 text-white shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+          aria-label="Cofrinho"
+        >
+          <PiPiggyBank className="text-xl" />
+        </a>
 
         <button
           type="button"
