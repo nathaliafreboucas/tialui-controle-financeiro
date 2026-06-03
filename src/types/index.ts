@@ -56,6 +56,8 @@ export interface CreditCardPurchaseInput {
   purchaseDate: string // ISO: 'YYYY-MM-DD'
   categoryId: string
   type: 'fixed' | 'variable'
+  /** true = fatura já fechou → 1ª parcela no mês seguinte; false = fatura aberta → 1ª parcela no mês atual */
+  billClosed: boolean
 }
 
 /**

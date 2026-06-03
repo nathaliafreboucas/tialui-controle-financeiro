@@ -35,6 +35,7 @@ export default function AddTransactionModal({
   const [isThirdParty, setIsThirdParty] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<'debit' | 'credit_card'>('debit')
   const [installments, setInstallments] = useState('')
+  const [billClosed, setBillClosed] = useState(false)
   const [saving, setSaving] = useState(false)
   const [amountError, setAmountError] = useState(false)
 
@@ -46,6 +47,7 @@ export default function AddTransactionModal({
     setIsThirdParty(false)
     setPaymentMethod('debit')
     setInstallments('')
+    setBillClosed(false)
   }
 
   function handleClose() {
@@ -78,6 +80,7 @@ export default function AddTransactionModal({
           purchaseDate: date,
           categoryId,
           type,
+          billClosed,
         })
       } else {
         const txData: NewTransaction = {
@@ -173,30 +176,45 @@ export default function AddTransactionModal({
           </div>
 
           {paymentMethod === 'credit_card' && (
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="installments" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Parcelas
+            <>
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={billClosed}
+                  onChange={(e) => setBillClosed(e.target.checked)}
+                  className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 accent-zinc-900 dark:accent-zinc-50"
+                />
+                <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                  Fatura já fechou
+                </span>
               </label>
-              <input
-                id="installments"
-                type="text"
-                inputMode="numeric"
-                value={installments}
-                onChange={(e) => setInstallments(e.target.value.replace(/\D/g, ''))}
-                placeholder="Ex: 12"
-                className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition"
-              />
-              {amount > 0 && installments !== '' && (
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {parseInt(installments) || 1}x de {(amount / (parseInt(installments) || 1) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  {' '}· 1ª parcela em{' '}
-                  {(() => {
-                    const [y, m] = date.split('-').map(Number)
-                    return new Date(y, m, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-                  })()}
-                </p>
-              )}
-            </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="installments" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Parcelas
+                </label>
+                <input
+                  id="installments"
+                  type="text"
+                  inputMode="numeric"
+                  value={installments}
+                  onChange={(e) => setInstallments(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Ex: 12"
+                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition"
+                />
+                {amount > 0 && installments !== '' && (
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {parseInt(installments) || 1}x de {(amount / (parseInt(installments) || 1) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {' '}· 1ª parcela em{' '}
+                    {(() => {
+                      const [y, m] = date.split('-').map(Number)
+                      const offset = billClosed ? 1 : 0
+                      return new Date(y, m - 1 + offset, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                    })()}
+                  </p>
+                )}
+              </div>
+            </>
           )}
 
           <div className="flex flex-col gap-1.5">

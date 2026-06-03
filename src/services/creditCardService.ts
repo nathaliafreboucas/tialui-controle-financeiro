@@ -15,23 +15,26 @@ function addMonthsToDate(dateStr: string, months: number): string {
 }
 
 /**
- * Creates credit card installment transactions for future months and records
- * the purchase in the creditCardBills collection.
+ * Creates credit card installment transactions and records the purchase in
+ * the creditCardBills collection.
  *
- * The current month is intentionally skipped — the first installment lands
- * on month+1, keeping the current cycle's balance unchanged.
+ * When billClosed=true the fatura already closed, so the first installment
+ * lands on month+1. When billClosed=false the fatura is still open, so the
+ * first installment lands on the current month (month+0).
  */
 export async function addCreditCardInstallments(
   data: CreditCardPurchaseInput
 ): Promise<string> {
   const installmentAmount = Math.round(data.totalAmount / data.installments)
   const transactionIds: string[] = []
+  const startOffset = data.billClosed ? 1 : 0
 
-  for (let i = 1; i <= data.installments; i++) {
-    const dueDate = addMonthsToDate(data.purchaseDate, i)
+  for (let i = 0; i < data.installments; i++) {
+    const installmentNumber = i + 1
+    const dueDate = addMonthsToDate(data.purchaseDate, startOffset + i)
     const txId = await addTransaction({
       userId: data.userId,
-      description: `${data.description} (${i}/${data.installments})`,
+      description: `${data.description} (${installmentNumber}/${data.installments})`,
       amount: installmentAmount,
       date: dueDate,
       type: data.type,
@@ -39,7 +42,7 @@ export async function addCreditCardInstallments(
       paymentMethod: 'credit_card',
       installmentData: {
         totalInstallments: data.installments,
-        currentInstallment: i,
+        currentInstallment: installmentNumber,
         purchaseDescription: data.description,
         totalAmount: data.totalAmount,
       },
