@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { getSavingsTransactions, addTransaction } from '@/services/transactions'
+import { addCategory as svcAddCategory } from '@/services/categories'
 import { formatCurrency } from '@/lib/finance'
 import { FiArrowLeft, FiLoader, FiPlus, FiLogOut, FiSettings } from 'react-icons/fi'
 import { PiPiggyBank } from 'react-icons/pi'
@@ -17,7 +18,7 @@ import { useFinance } from '@/context/FinanceContext'
 
 export default function CofrinhoPage() {
   const { user, loading: authLoading, signOut } = useAuth()
-  const { settings, saveSettings } = useFinance()
+  const { settings, saveSettings, categories } = useFinance()
   const userId = user?.uid ?? null
 
   const [deposits, setDeposits] = useState<Transaction[]>([])
@@ -37,15 +38,17 @@ export default function CofrinhoPage() {
 
   async function handleSave(amount: number, date: string) {
     if (!userId) return
+    const existing = categories.find((c) => c.name === 'Cofrinho')
+    const categoryId = existing?.id ?? await svcAddCategory({ userId, name: 'Cofrinho' })
     const id = await addTransaction({
       userId,
       description: 'Cofrinho',
       amount,
       date,
       type: 'savings',
-      categoryId: '',
+      categoryId,
     })
-    const newDeposit: Transaction = { id, userId, description: 'Cofrinho', amount, date, type: 'savings', categoryId: '' }
+    const newDeposit: Transaction = { id, userId, description: 'Cofrinho', amount, date, type: 'savings', categoryId }
     setDeposits((prev) =>
       [newDeposit, ...prev].sort((a, b) => b.date.localeCompare(a.date))
     )
