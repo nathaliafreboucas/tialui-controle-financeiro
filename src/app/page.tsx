@@ -13,6 +13,7 @@ import ThemeToggle from '@/components/ThemeToggle'
 import SettingsModal from '@/components/SettingsModal'
 import AddTransactionModal from '@/components/AddTransactionModal'
 import AddExtraIncomeForm from '@/components/AddExtraIncomeForm'
+import { DraggableFloatingGroup } from '@/components/DraggableFloatingGroup'
 import FirebaseErrorBanner from '@/components/FirebaseErrorBanner'
 import TransactionList from '@/components/TransactionList'
 import TransactionFilters, { EMPTY_FILTERS, type FilterState } from '@/components/TransactionFilters'
@@ -228,14 +229,23 @@ export default function Home() {
             <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
               Categorias
             </h2>
-            <button
-              onClick={() => { setEditingCategory(null); setCategoryModalOpen(true) }}
-              className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
-              aria-label="Nova categoria"
-            >
-              <FiPlus className="text-sm" />
-              Nova
-            </button>
+            <div className="flex items-center gap-3">
+              <a
+                href="/categories"
+                className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
+              >
+                <FiList className="text-sm" />
+                Gerenciar
+              </a>
+              <button
+                onClick={() => { setEditingCategory(null); setCategoryModalOpen(true) }}
+                className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
+                aria-label="Nova categoria"
+              >
+                <FiPlus className="text-sm" />
+                Nova
+              </button>
+            </div>
           </div>
           {categoriesWithLimit.length === 0 ? (
             <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 p-8 text-center text-sm text-zinc-400">
@@ -368,31 +378,33 @@ export default function Home() {
           />
         </section>
 
-        <a
-          href="/cofrinho"
-          className="fixed bottom-40 right-6 w-12 h-12 rounded-full bg-blue-600 dark:bg-blue-500 text-white shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
-          aria-label="Cofrinho"
-        >
-          <PiPiggyBank className="text-xl" />
-        </a>
+        <DraggableFloatingGroup>
+          <a
+            href="/cofrinho"
+            className="w-12 h-12 rounded-full bg-blue-600 dark:bg-blue-500 text-white shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+            aria-label="Cofrinho"
+          >
+            <PiPiggyBank className="text-xl" />
+          </a>
 
-        <button
-          type="button"
-          onClick={() => setAddExtraIncomeOpen(true)}
-          className="fixed bottom-24 right-6 w-12 h-12 rounded-full bg-green-600 dark:bg-green-500 text-white shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
-          aria-label="Adicionar renda extra"
-        >
-          <FiTrendingUp className="text-xl" />
-        </button>
+          <button
+            type="button"
+            onClick={() => setAddExtraIncomeOpen(true)}
+            className="w-12 h-12 rounded-full bg-green-600 dark:bg-green-500 text-white shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+            aria-label="Adicionar renda extra"
+          >
+            <FiTrendingUp className="text-xl" />
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setAddTxOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 text-3xl shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
-          aria-label="Adicionar gasto"
-        >
-          <FiPlus className="text-2xl" />
-        </button>
+          <button
+            type="button"
+            onClick={() => setAddTxOpen(true)}
+            className="w-14 h-14 rounded-full bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+            aria-label="Adicionar gasto"
+          >
+            <FiPlus className="text-2xl" />
+          </button>
+        </DraggableFloatingGroup>
       </main>
 
       {user && (
